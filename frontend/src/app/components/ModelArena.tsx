@@ -33,7 +33,7 @@ export function ModelArena({ models }: ModelArenaProps) {
               <div className="model-metrics">
                 <div className="metric">
                   <div className="metric-label">Accuracy</div>
-                  <div className="metric-value">{(model.accuracy * 100).toFixed(1)}%</div>
+                  <div className="metric-value">{model.accuracy.toFixed(2)}%</div>
                 </div>
                 <div className="metric">
                   <div className="metric-label">Weighted F1</div>

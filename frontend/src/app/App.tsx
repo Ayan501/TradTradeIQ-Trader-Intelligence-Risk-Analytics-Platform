@@ -11,6 +11,7 @@ import { ModelArena } from './components/ModelArena';
 import { LiveSnapshot } from './components/LiveSnapshot';
 import { PredictionPanel } from './components/PredictionPanel';
 import { DataUploadPanel } from './components/DataUploadPanel';
+import { apiUrl } from './lib/api';
 import '../styles/dashboard.css';
 
 // Mock Data
@@ -122,7 +123,7 @@ function useDashboardData() {
 
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/dashboard')
+    fetch(apiUrl('/api/dashboard'))
       .then((response) => response.json())
       .then((payload) => {
         if (isMounted) setDashboardData(payload);
@@ -155,7 +156,7 @@ function buildModelData(dashboardData: DashboardApiData | null) {
 
   return dashboardData.model_cards.map((model) => ({
     name: model.name,
-    accuracy: model.accuracy / 100,
+    accuracy: model.accuracy,
     f1Score: model.f1 / 100,
     isBest: model.name === dashboardData.best_model_name,
   }));
@@ -394,7 +395,7 @@ async function runPrediction(data: Record<string, string>) {
     payload[field] = Number(data[field] || 0) as unknown as string;
   });
 
-  const response = await fetch('/api/predict', {
+  const response = await fetch(apiUrl('/api/predict'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { apiUrl } from '../lib/api';
 
 interface UploadSummary {
   rows: number;
@@ -73,7 +74,7 @@ export function DataUploadPanel() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/analyze-file', {
+      const response = await fetch(apiUrl('/api/analyze-file'), {
         method: 'POST',
         body: formData,
       });

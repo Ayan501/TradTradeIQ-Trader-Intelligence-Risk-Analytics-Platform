@@ -39,6 +39,7 @@ ALLOWED_UPLOAD_SUFFIXES = {".csv", ".xls", ".xlsx"}
 
 
 def get_db_connection() -> sqlite3.Connection:
+    # Keep the DB setup local so auth works even on a fresh project clone.
     USER_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(USER_DB_PATH)
     connection.row_factory = sqlite3.Row
@@ -58,6 +59,7 @@ def serialize_user(row: sqlite3.Row) -> dict:
 
 
 def init_user_db() -> None:
+    # Create the auth table once and seed a default admin for quick access.
     with get_db_connection() as connection:
         connection.execute(
             """
@@ -108,6 +110,7 @@ def load_metrics() -> dict:
 
 
 def model_metadata() -> dict:
+    # Read the latest trained model details so the UI can show live metadata.
     metrics = load_metrics()
     model_path = ARTIFACTS_DIR / "model_trainer" / "model.pkl"
     return {
@@ -119,6 +122,7 @@ def model_metadata() -> dict:
 
 
 def load_prediction_defaults(df: pd.DataFrame) -> dict:
+    # Pick one realistic sample from the test split to prefill the prediction form.
     model_df = df.dropna(subset=["target_label"]).copy()
     drop_columns = ["Account", "trade_date", "next_day_pnl", "current_day_pnl", "target_label"]
     input_feature_df = model_df.drop(columns=drop_columns)
@@ -134,6 +138,7 @@ def load_prediction_defaults(df: pd.DataFrame) -> dict:
 
 
 def build_chart_gallery() -> list[dict]:
+    # Map saved chart files into clean titles/captions for the frontend gallery.
     chart_meta = {
         "charts1_performance.png": {
             "title": "Performance vs Sentiment",
@@ -183,6 +188,7 @@ def build_chart_gallery() -> list[dict]:
 
 
 def read_uploaded_table(uploaded_file) -> pd.DataFrame:
+    # Accept only spreadsheet-style uploads so file parsing stays predictable.
     suffix = Path(uploaded_file.filename or "").suffix.lower()
     if suffix not in ALLOWED_UPLOAD_SUFFIXES:
         raise ValueError("Only CSV, XLS, and XLSX files are supported.")
@@ -194,6 +200,7 @@ def read_uploaded_table(uploaded_file) -> pd.DataFrame:
 
 
 def summarize_table(df: pd.DataFrame) -> dict:
+    # Build a quick data snapshot with preview cards and simple chart-friendly values.
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     chart_cols = numeric_cols[:8]
     chart_data = [
@@ -235,6 +242,7 @@ def summarize_table(df: pd.DataFrame) -> dict:
 
 
 def prepare_prediction_frame(df: pd.DataFrame) -> tuple[pd.DataFrame | None, list[str]]:
+    # Align uploaded columns with the training schema before sending them to the model.
     missing_columns = [feature for feature in MODEL_FEATURES if feature not in df.columns]
     if missing_columns:
         return None, missing_columns
@@ -249,6 +257,7 @@ def prepare_prediction_frame(df: pd.DataFrame) -> tuple[pd.DataFrame | None, lis
 
 
 def build_decision(prediction_counts: dict, df: pd.DataFrame) -> dict:
+    # Turn raw prediction buckets into a simple action the UI can explain easily.
     total_predictions = max(sum(prediction_counts.values()), 1)
     win_count = prediction_counts.get("big_win", 0) + prediction_counts.get("small_win", 0)
     loss_count = prediction_counts.get("big_loss", 0) + prediction_counts.get("small_loss", 0)
@@ -280,13 +289,28 @@ def build_decision(prediction_counts: dict, df: pd.DataFrame) -> dict:
 app = Flask(__name__, static_folder=str(BASE_DIR / "frontend" / "dist"), static_url_path="/")
 
 
+@app.after_request
+def add_cors_headers(response):
+    # Add permissive CORS headers so the frontend can call the API without extra setup.
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
+
+
 @app.get("/api/health")
 def health_check():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/<path:_path>", methods=["OPTIONS"])
+def api_preflight(_path: str):
+    return ("", 204)
+
+
 @app.post("/api/login")
 def login():
+    # Basic email/password login backed by the local SQLite user table.
     payload = request.get_json(force=True)
     email = str(payload.get("email", "")).strip()
     password = str(payload.get("password", ""))
@@ -310,6 +334,7 @@ def login():
 
 @app.post("/api/register")
 def register():
+    # Create a new user record and return the same demo-style session payload.
     payload = request.get_json(force=True)
     name = str(payload.get("name", "")).strip() or "PrimeTrade User"
     email = str(payload.get("email", "")).strip().lower()
@@ -340,6 +365,7 @@ def register():
 
 @app.get("/api/dashboard")
 def dashboard_data():
+    # This endpoint bundles the dashboard cards, charts, and model info in one response.
     df = load_feature_store()
     metrics = load_metrics()
 
@@ -394,6 +420,7 @@ def dashboard_data():
 
 @app.post("/api/predict")
 def predict():
+    # Single-record prediction used by the manual input form on the frontend.
     payload = request.get_json(force=True)
     features = pd.DataFrame([payload])
     prediction = PredictionPipeline().predict(features)[0]
@@ -407,6 +434,7 @@ def model_info():
 
 @app.post("/api/analyze-file")
 def analyze_file():
+    # Analyze uploaded trading data, then try bulk predictions if the schema matches.
     if "file" not in request.files:
         return jsonify({"message": "Upload a CSV, XLS, or XLSX file."}), 400
 
@@ -463,6 +491,7 @@ def serve_index():
 
 @app.get("/<path:path>")
 def serve_spa(path: str):
+    # Serve built assets directly and fall back to index.html for client-side routes.
     dist_dir = BASE_DIR / "frontend" / "dist"
     requested_file = dist_dir / path
     if requested_file.exists() and requested_file.is_file():
