@@ -1,11 +1,22 @@
 from fastapi import APIRouter
 
+
 try:
-    from backend.schemas import PredictRequest
+    from schemas.prediction import PredictRequest
+    from services.ml_service import predict_trader
+    from services.advice_service import get_advice
+    from sqlalchemy import text
+    from app.database import engine
 except ModuleNotFoundError:
-    from schemas import PredictRequest
+    from schemas.prediction import PredictRequest
+    from services.ml_service import predict_trader
+    from services.advice_service import get_advice
+    from sqlalchemy import text
+    from app.database import engine
+
 
 router = APIRouter()
+
 
 @router.post("/predict")
 def predict(data: PredictRequest):
@@ -29,7 +40,41 @@ def predict(data: PredictRequest):
         "sentiment": data.sentiment
     }
 
-    return {
-        "status": "success",
-        "features": features
-    }
+
+    prediction = predict_trader(features)
+
+    advice = get_advice(prediction)
+
+    with engine.begin() as conn:
+
+        conn.execute(
+            text("""
+                INSERT INTO predictions
+                (
+                    user_id,
+                    fear_greed_score,
+                    predicted_outcome,
+                    confidence_score,
+                    advisory_text
+                )
+                VALUES
+                (
+                    :user_id,
+                    :fear_greed_score,
+                    :predicted_outcome,
+                    :confidence_score,
+                    :advisory_text
+                )
+            """),
+            {
+                "user_id": 1,
+                "fear_greed_score": data.fg_value,
+                "predicted_outcome": prediction,
+                "confidence_score": 80,
+                "advisory_text": advice
+            }
+        )
+        return {
+    "prediction": prediction,
+    "advice": advice
+}

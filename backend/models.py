@@ -1,2 +1,0 @@
-"""ORM models module."""
-
