@@ -1,6 +1,52 @@
 __pycache__/
 *.py[cod]
-artifacts/
 logs/
 .pytest_cache/
 .ipynb_checkpoints/
+data/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Environment Variables
+.env
+*.env
+
+# Logs
+*.log
+
+# Backend
+backend/.env
+
+# React / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# npm
+npm-debug.log*
+yarn-debug.log*
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+coverage/
+
+artifacts/transformation/train.pkl
+artifacts/transformation/test.pkl

@@ -40,8 +40,7 @@ def predict(data: PredictRequest):
         "sentiment": data.sentiment
     }
 
-
-    prediction = predict_trader(features)
+    prediction, confidence = predict_trader(features)
 
     advice = get_advice(prediction)
 
@@ -67,14 +66,15 @@ def predict(data: PredictRequest):
                 )
             """),
             {
-                "user_id": 1,
+                "user_id": data.user_id,
                 "fear_greed_score": data.fg_value,
                 "predicted_outcome": prediction,
-                "confidence_score": 80,
+                "confidence_score": confidence,
                 "advisory_text": advice
             }
         )
         return {
     "prediction": prediction,
-    "advice": advice
+    "advice": advice,
+    "confidence_score": confidence
 }

@@ -8,15 +8,37 @@ import History from "../pages/History";
 import About from "../pages/About";
 import Contact from "../pages/Contact";
 
+import ProtectedRoute from "../components/ProtectedRoute";
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+
       <Route path="/login" element={<Login />} />
+
       <Route path="/register" element={<Register />} />
-      <Route path="/assistant" element={<AIAssistant />} />
-      <Route path="/history" element={<History />} />
+
+      <Route
+        path="/assistant"
+        element={
+          <ProtectedRoute>
+            <AIAssistant />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/history"
+        element={
+          <ProtectedRoute>
+            <History />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="/about" element={<About />} />
+
       <Route path="/contact" element={<Contact />} />
     </Routes>
   );

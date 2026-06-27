@@ -1,28 +1,53 @@
+import { useEffect, useState } from "react";
+import api from "../services/api";
+
+interface HistoryItem {
+  pred_id: number;
+  predicted_outcome: string;
+  confidence_score: number;
+  advisory_text: string;
+  created_at: string;
+}
+
 function History() {
-  const historyData = [
-    {
-      prediction: "Big Win",
-      confidence: "92%",
-      date: "24 Jun 2026",
-    },
-    {
-      prediction: "Small Win",
-      confidence: "81%",
-      date: "23 Jun 2026",
-    },
-    {
-      prediction: "Small Loss",
-      confidence: "75%",
-      date: "22 Jun 2026",
-    },
-  ];
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const userId = localStorage.getItem("user_id");
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const response = await api.get(`/history/${userId}`);
+      setHistory(response.data);
+    } catch (error) {
+      console.log(error);
+      alert("Failed to load history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const accuracy =
+    history.length > 0
+      ? (
+          (history.filter(
+            (item) =>
+              item.predicted_outcome === "big_win" ||
+              item.predicted_outcome === "small_win"
+          ).length /
+            history.length) *
+          100
+        ).toFixed(0)
+      : "0";
 
   return (
     <div className="min-h-screen bg-[#F6E9D9] px-6 py-12">
 
       <div className="max-w-7xl mx-auto">
-
-        {/* HEADER */}
 
         <div className="mb-10">
 
@@ -36,49 +61,41 @@ function History() {
 
         </div>
 
-        {/* STATS */}
-
         <div className="grid md:grid-cols-3 gap-6 mb-10">
 
           <div className="bg-white rounded-3xl p-6 shadow-lg">
-
             <h3 className="text-gray-500">
               Total Predictions
             </h3>
 
             <p className="text-4xl font-bold text-[#043222] mt-2">
-              24
+              {history.length}
             </p>
-
           </div>
 
           <div className="bg-white rounded-3xl p-6 shadow-lg">
-
             <h3 className="text-gray-500">
-              Accuracy
+              Positive Predictions
             </h3>
 
             <p className="text-4xl font-bold text-green-700 mt-2">
-              72%
+              {accuracy}%
             </p>
-
           </div>
 
           <div className="bg-white rounded-3xl p-6 shadow-lg">
-
             <h3 className="text-gray-500">
-              Best Outcome
+              Latest Prediction
             </h3>
 
-            <p className="text-4xl font-bold text-[#043222] mt-2">
-              Big Win
+            <p className="text-2xl font-bold text-[#043222] mt-2 capitalize">
+              {history.length
+                ? history[0].predicted_outcome.replace("_", " ")
+                : "--"}
             </p>
-
           </div>
 
         </div>
-
-        {/* TABLE */}
 
         <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
 
@@ -90,56 +107,103 @@ function History() {
 
           </div>
 
-          <table className="w-full">
+          {loading ? (
 
-            <thead className="bg-[#043222] text-[#F6E9D9]">
+            <div className="p-10 text-center">
+              Loading...
+            </div>
 
-              <tr>
+          ) : history.length === 0 ? (
 
-                <th className="text-left px-6 py-4">
-                  Prediction
-                </th>
+            <div className="p-10 text-center text-gray-500">
+              No prediction history found.
+            </div>
 
-                <th className="text-left px-6 py-4">
-                  Confidence
-                </th>
+          ) : (
 
-                <th className="text-left px-6 py-4">
-                  Date
-                </th>
+            <table className="w-full">
 
-              </tr>
+              <thead className="bg-[#043222] text-[#F6E9D9]">
 
-            </thead>
+                <tr>
 
-            <tbody>
+                  <th className="px-6 py-4 text-left">
+                    Prediction
+                  </th>
 
-              {historyData.map((item, index) => (
+                  <th className="px-6 py-4 text-left">
+                    Confidence
+                  </th>
 
-                <tr
-                  key={index}
-                  className="border-b hover:bg-gray-50"
-                >
+                  <th className="px-6 py-4 text-left">
+                    Advice
+                  </th>
 
-                  <td className="px-6 py-4 font-semibold">
-                    {item.prediction}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {item.confidence}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {item.date}
-                  </td>
+                  <th className="px-6 py-4 text-left">
+                    Date
+                  </th>
 
                 </tr>
 
-              ))}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                {history.map((item) => (
+
+                  <tr
+                    key={item.pred_id}
+                    className="border-b hover:bg-green-50 transition-all duration-300"
+                  >
+
+                    <td className="px-6 py-4">
+
+<span
+                    className={`px-3 py-2 rounded-full text-sm font-semibold
+                    ${
+                    item.predicted_outcome==="big_win"
+                    ?"bg-green-100 text-green-700"
+                    :item.predicted_outcome==="small_win"
+                    ?"bg-green-50 text-green-600"
+                    :item.predicted_outcome==="neutral"
+                    ?"bg-yellow-100 text-yellow-700"
+                    :item.predicted_outcome==="small_loss"
+                    ?"bg-orange-100 text-orange-700"
+                    :"bg-red-100 text-red-700"
+                    }`}
+                    >
+                    {item.predicted_outcome.replace("_"," ")}
+                    </span>
+
+                    </td>
+
+                    <td className="px-6 py-4">
+                        {item.confidence_score}%
+                      </td>
+
+                    <td className="px-6 py-4 max-w-sm text-gray-600">
+                      {item.advisory_text}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {new Date(item.created_at).toLocaleDateString()}{new Date(item.created_at).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          )}
 
         </div>
 

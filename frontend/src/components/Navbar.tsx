@@ -1,6 +1,16 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Navbar() {
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("user_name");
+
+    navigate("/login");
+  };
   return (
 <nav className="bg-[#043222] border border-green-900 rounded-3xl mx-5 mt-4 shadow-lg">      <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
 
@@ -20,6 +30,7 @@ function Navbar() {
           <Link to="/history">History</Link>
           <Link to="/about">About</Link>
           <Link to="/contact">Contact</Link>
+          
         </div>
 
         <div className="flex gap-4">
@@ -36,6 +47,12 @@ function Navbar() {
           >
             Get Started
           </Link>
+          <button
+  onClick={handleLogout}
+  className="px-4 py-2 rounded-lg text-red-500 font-bold hover:bg-red-50 transition"
+>
+  Logout
+</button>
         </div>
 
       </div>

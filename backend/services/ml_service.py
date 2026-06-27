@@ -4,7 +4,7 @@ import joblib
 from pathlib import Path
 import pandas as pd
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parents[1]
 
 MODEL_PATH = BASE_DIR / "artifacts" / "model_trainer" / "model.pkl"
 
@@ -26,4 +26,8 @@ def predict_trader(data: dict):
 
     prediction = model.predict(transformed_data)
 
-    return prediction[0]
+    probabilities = model.predict_proba(transformed_data)
+
+    confidence = float(round(max(probabilities[0]) * 100, 2))
+
+    return prediction[0], confidence
