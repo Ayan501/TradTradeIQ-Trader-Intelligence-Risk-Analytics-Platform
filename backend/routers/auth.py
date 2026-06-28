@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from sqlalchemy import text
 from app.database import engine
 try:
-    from backend.schemas.auth_schemas import RegisterRequest
+    from backend.schemas.auth_schemas import RegisterRequest,LoginRequest
 except ModuleNotFoundError:
     from schemas.auth_schemas import RegisterRequest,LoginRequest
 router = APIRouter(
