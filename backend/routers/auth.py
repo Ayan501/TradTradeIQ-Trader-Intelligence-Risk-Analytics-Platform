@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+import hashlib
 from sqlalchemy import text
 from app.database import engine
 try:
@@ -9,6 +10,10 @@ router = APIRouter(
     prefix="/auth",
     tags=["authentication"]
 )
+
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 @router.get("/")
 def home():
@@ -61,7 +66,7 @@ def register(user: RegisterRequest):
                 "org_id": 1,
                 "name": user.name,
                 "email": user.email,
-                "password": user.password,
+                "password": hash_password(user.password),
                 "role": "trader"
             }
         )
@@ -96,7 +101,7 @@ def login(user: LoginRequest):
             "message": "Invalid Email"
         }
 
-    if user.password != db_user.password_hash:
+    if user.password != db_user.password_hash and hash_password(user.password) != db_user.password_hash:
 
         return {
             "message": "Invalid Password"
