@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -22,13 +23,17 @@ except ModuleNotFoundError:
 
 
 app = FastAPI()
+allowed_origin_regex = os.getenv(
+    "CORS_ORIGIN_REGEX",
+    r"https://.*\.vercel\.app"
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "https://trad-trade-iq-trader-intelligence-r.vercel.app"
-],
-    
+    ],
+    allow_origin_regex=allowed_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
