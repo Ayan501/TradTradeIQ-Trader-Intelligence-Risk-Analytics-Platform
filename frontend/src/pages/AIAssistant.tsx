@@ -46,7 +46,7 @@ function AIAssistant() {
 
       setPrediction(response.data.prediction);
       setAdvice(response.data.advice);
-      setConfidence(response.data.confidence);
+      setConfidence(response.data.confidence_score);
 
     } catch (err) {
 
